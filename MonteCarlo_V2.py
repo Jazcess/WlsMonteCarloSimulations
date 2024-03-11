@@ -17,6 +17,8 @@ import seaborn as sns
 import Sim_data as data
 import Photon_Class as P
 
+random.seed(0)
+
 # Function for calculating the next collision point
 def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_radii, wl):
     """
@@ -172,7 +174,7 @@ def start_sim(pos, velocity, init_wl, atl, boundaries, pmt_center, pmt_radii, ca
             [overX,overY,overZ] = [overshoot * velocity[i]/np.linalg.norm(velocity) for i in range(3)]
             overxyz = [overX,overY,overZ]
             # Update position to the point of absorption
-            abs_coords = [pos[i] + overxyz[i]  for i in range(3)]
+            abs_coords = [coll_point[i] - overxyz[i]  for i in range(3)]
             pos = abs_coords
 
             # Append positions to individual axis arrays

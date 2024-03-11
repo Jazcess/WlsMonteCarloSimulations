@@ -18,10 +18,12 @@ import Sim_funcs_V1 as func
 import Sim_data as data
 import Photon_Class as P
 
+random.seed(0)
+
 
 #---------------------VARIABLES------------------
 
-nruns=2000
+nruns=1500
 dt = 1e-13 # time difference between each step in seconds
 R = 0.0762/2 #pmt radius
 n_wls = 1.58 # refractive index of PVT WLS plate
@@ -69,12 +71,14 @@ def checks(x,y,z,vx,vy,vz,row,ref_coords,refract_coord, shifted_wl):
             passed = False
             refract_coord.append([round(x,3),round(y,3),round(z,3)])
 
-    if(([x,z] > [w,l]) or ([x,z] < [0,0])): #means one coord has exceeded a boundary
-        v = np.asarray([vx,vz]) #veclocity vectors
-        i = np.where((np.asarray([x,z]) > [w,l]) | (np.asarray([x,z]) < [0,0]))[0] #find which one has hit boundary
-        v[i] *= -1 #reflect the corresponding velocity vector
-        vx, vz = v[0], v[1] #update velocity vectors
-        ref_coords.append([round(x,3),round(y,3),round(z,3)])
+    if x < 0 or x > w:
+        vx *= -1
+        ref_coords.append([round(x, 3), round(y, 3), round(z, 3)])
+
+    if z < 0 or z > l:
+        vz *= -1
+        ref_coords.append([round(x, 3), round(y, 3), round(z, 3)])
+
 
     x_e = ((x-w/2)**2)/R**2
     y_e = (y**2/0.04**2)
@@ -134,8 +138,6 @@ def sim(out_file):
             step_z = 0
 
             while (dist) < p1.absl: #keep going until distance is larger than abl
-                #Can replace this by starting sim at point of absorption, replaces the many steps required
-                #Update step() function to calculate positions at each collision point, rather that at each dt step
                 x_old = x
                 y_old = y
                 z_old = z

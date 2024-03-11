@@ -4,6 +4,8 @@ import numpy as np
 import Sim_data as data
 import scipy.constants as scp
 
+random.seed(0)
+
 # Class for photon used in Monte Carlo simulation
 
 class Photon:

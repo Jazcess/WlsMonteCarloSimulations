@@ -17,10 +17,9 @@ import seaborn as sns
 import Sim_data as data
 import Photon_Class as P
 
-random.seed(0)
 
 # Function for calculating the next collision point
-def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_radii, wl):
+def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_radii, wl, water):
     """
     Calculate the next collision point of a particle with boundaries and a photomultiplier tube (PMT).
 
@@ -43,7 +42,8 @@ def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_rad
     """
     # Initialize variables
     hit = False
-    hit_coords = []
+    #hit_pmt, hit_wls
+    hit_coords = [] #for both pmt and wls, as only one can be hit in water run
     detected = False
     tol = 1e-05
     pmtqe = None
@@ -51,6 +51,10 @@ def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_rad
 
     # Calculate time to reach each boundary
     t_boundaries = [(boundaries[i] - position[i]) / velocity[i] for i in range(3)]
+
+    # if water: #if in the water, consider the WLS as an additional boundary
+    #     t_boundaries.append((wls[i] - position[i]) / velocity[i] for i in range(3))
+
 
     # Calculate time to reach the PMT using quadratic intersection formula
     delta_position = position - pmt_center
@@ -71,6 +75,7 @@ def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_rad
     # Find the minimum positive time to reach a boundary or the PMT
     min_positive_time = np.min(np.array(t_boundaries)[np.array(t_boundaries) > 0])
 
+
     axis_hit, boundary = np.where(t_boundaries == min_positive_time)
     axis_hit = axis_hit[0]
     boundary = boundary[0]
@@ -79,12 +84,12 @@ def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_rad
     collision_point = [position[i] + velocity[i] * min_positive_time for i in range(3)]
 
     # Check if the collision point is inside the PMT
-    if (axis_hit == 3) and (np.sum((collision_point - pmt_center)**2 / pmt_radii**2) <= 1 + tol):
+    if (np.sum((collision_point - pmt_center)**2 / pmt_radii**2) <= 1 + tol):
         hit = True
         hit_coords = collision_point
 
         # Check if PMT hit
-        print("\nPMT Hit!")
+        #print("\nPMT Hit!")
         
         # Find the associated efficiency with the detector wavelength
         diff = abs(data.QE_wls-wl)
@@ -93,17 +98,17 @@ def calculate_next_collision(position, velocity, boundaries, pmt_center, pmt_rad
 
         # Randomly choose whether the detector detects the hit based on quantumn efficiency
         detected = True if np.random.choice([1, 0], p=[pmtqe, 1-pmtqe]) == 1 else False
-
-
+        #if water and collision point is inside wls plate, register coords and break simulation
     else:
         collision_point[axis_hit] = boundaries[axis_hit, boundary]  # Set the axis hit to be exactly at the boundary
 
-    return collision_point, min_positive_time, axis_hit, hit, hit_coords, detected, pmtqe
+
+    return collision_point, min_positive_time, axis_hit, hit, hit_coords, detected, pmtqe #hit_pmt, hit_wls
 
 
 
 
-def start_sim(pos, velocity, init_wl, atl, boundaries, pmt_center, pmt_radii, ca):
+def start_sim(pos, velocity, init_wl, satl, latl, boundaries, pmt_center, pmt_radii, ca, water):
     """
     Simulates the movement of a photon in a medium, considering absorption, reflection, and refraction.
 
@@ -141,62 +146,79 @@ def start_sim(pos, velocity, init_wl, atl, boundaries, pmt_center, pmt_radii, ca
     refract_coords = [] #photon refraction coordinates
     reflects = 0 #num of reflections / bounces
     theta_iso, phi_iso = 0, 0 #isotropic emmission angles
-    coord = ['x', 'y', 'z'] # Axis
     hit = False
     absorbed = False
+    absorbed_again = False
     timeout = False
+    abs_dist = 0
+    sabsl, labsl = 0, 0
 
-    p1 = P.Photon(velocity, pos, init_wl, atl) # Call photon class
+    p1 = P.Photon(velocity, pos, init_wl, satl) # Call photon class
     p1.al() # Run absorption length function from class
+    sabsl = p1.absl
     
 
-    while not hit:
+    while not hit: #while not hit_pmt and not hit_wls (hit_wls == True if not water)
         # Calculate collision point
         coll_point, coll_time, axis_hit, hit, hit_coords, detected, pmtqe = calculate_next_collision(pos, velocity, 
-                                                                                            boundaries, pmt_center, pmt_radii, p1.wl)
+                                                                                            boundaries, pmt_center, pmt_radii, p1.wl, water)
         if coll_time is None:  # error handling
-            print("No collision time found. Exiting simulation.")
+            #print("No collision time found. Exiting simulation.")
             break
 
         # Calculate distance travelled between origin point and collision boundary
         dist = math.sqrt((pos[0] - coll_point[0])**2 + (pos[1] - coll_point[1])**2 + (pos[2] - coll_point[2])**2)
         total_dist += dist
+        abs_dist +=dist
         t += coll_time
 
 
         # Check if total distance exceeds absorption length
-        if total_dist >= p1.absl and not absorbed:
-            print("\nAbsorbed!")
+        if abs_dist >= p1.absl and (not absorbed or not absorbed_again):
+            #print("\nAbsorbed!")
+            if absorbed:
+                absorbed_again = True
+            absorbed = True
 
-            overshoot = total_dist - p1.absl  # Calculate overshoot distance
+
+            overshoot = abs_dist - p1.absl  # Calculate overshoot distance
             total_dist -= overshoot  # Adjust total distance
-            print("Total distance travelled:", total_dist, "m")
+            #print("Total distance travelled:", total_dist, "m")
             [overX,overY,overZ] = [overshoot * velocity[i]/np.linalg.norm(velocity) for i in range(3)]
             overxyz = [overX,overY,overZ]
             # Update position to the point of absorption
-            abs_coords = [coll_point[i] - overxyz[i]  for i in range(3)]
-            pos = abs_coords
+            pos = [coll_point[i] - overxyz[i]  for i in range(3)]
+            abs_coords.append(pos)
 
             # Append positions to individual axis arrays
             xpos.append(pos[0])
             ypos.append(pos[1])
             zpos.append(pos[2])
-            print("Absorption Point:", abs_coords)
+            #print("Absorption Point:", abs_coords)
 
-            # Perform wavelength shift calculation
-            p1.swl(data.emms_cdf, data.emms_wls) # Calculate the emitted shifted wavelength
+            if absorbed_again: #fully absorbed at this point
+                break
 
-            # Update velocity for isotropic emission
-            theta_iso = random.uniform(0, 2*math.pi) # New isotropic emission angle theta
-            phi_iso =  math.asin(random.uniform(-1, 1)) # New isotropic emission angle phi
-            vy = np.linalg.norm(velocity) * math.sin(theta_iso) * math.sin(phi_iso)
-            vx = np.linalg.norm(velocity) * math.sin(theta_iso) * math.cos(phi_iso)
-            vz = np.linalg.norm(velocity) * math.cos(theta_iso)
-            velocity = [vx, vy, vz]
+            #only do wavelength shifting and emmission with wls plate, not water
+            #dont wls again on second absorption
+            elif not water or not absorbed_again: 
+                # Perform wavelength shift calculation
+                p1.swl(data.emms_cdf, data.emms_wls) # Calculate the emitted shifted wavelength
 
-            absorbed = True
-            
-            
+                # Update velocity for isotropic emission
+                theta_iso = random.uniform(0, 2*math.pi) # New isotropic emission angle theta
+                phi_iso =  math.asin(random.uniform(-1, 1)) # New isotropic emission angle phi
+                vy = np.linalg.norm(velocity) * math.sin(theta_iso) * math.sin(phi_iso)
+                vx = np.linalg.norm(velocity) * math.sin(theta_iso) * math.cos(phi_iso)
+                vz = np.linalg.norm(velocity) * math.cos(theta_iso)
+                velocity = [vx, vy, vz]
+
+
+            #Setup for secondary absorption
+            p1.mu = 1/latl #longer atl metres
+            p1.al() #new longer absorption length
+            abs_dist = 0 #restart distance counter
+            labsl = p1.absl
         else:
             # Update position
             pos = coll_point
@@ -205,36 +227,37 @@ def start_sim(pos, velocity, init_wl, atl, boundaries, pmt_center, pmt_radii, ca
             ypos.append(pos[1])
             zpos.append(pos[2])
 
-            if pos[1] == boundaries[1,1]: #if upper boundary is hit
-                print("\nupper boundary hit")
+            if not water and pos[1] == boundaries[1,1]: #if upper boundary is hit
+                #print("\nupper boundary hit")
                 theta_i = math.atan(velocity[0]/velocity[1]) #calculate incident angles
                 phi_i = math.atan(velocity[2]/velocity[1])
                 if (abs(theta_i) or abs(phi_i)) >= ca: #if incident angle is bigger or equal to critical angle
                     velocity[axis_hit] *= -1
                 else: #else refracts
-                    print("refracted")
+                    #print("refracted")
                     refract_coords = pos
                     break
             elif not hit: #just reflects off boundary
                 velocity[axis_hit] *= -1
                 reflects += 1
-                print("\nAxis hit:", coord[axis_hit], "=", coll_point[axis_hit], "m")
+                #print("\nAxis hit:", coord[axis_hit], "=", coll_point[axis_hit], "m")
             
 
-            print("Time between collisions:", round(coll_time*1e7,5), "ns")
-            print("Coordinates at the point of collision (x, y, z):", coll_point, "m")
-            print("Velocity", velocity, "m/s")
-            print("Distance travelled:", dist, "m")
-            print("Total distance travelled:", total_dist, "m")
+            # print("Time between collisions:", round(coll_time*1e7,5), "ns")
+            # print("Coordinates at the point of collision (x, y, z):", coll_point, "m")
+            # print("Velocity", velocity, "m/s")
+            # print("Distance travelled:", dist, "m")
+            # print("Total distance travelled:", total_dist, "m")
 
         # Check for simulation timeout
         if t > 1e-8:
             timeout = True
-            print("Timeout!")
+            #print("Timeout!")
             break
 
-    print("Total distance travelled:", total_dist, "m")
-    print("Total time:", round(t*1e7,5), "ns")
 
-    return (p1.absl, abs_coords, theta_iso, phi_iso, p1.wl, refract_coords, hit_coords, detected, 
-            reflects, pmtqe, xpos, ypos, zpos, t, timeout)
+    #print("Total distance travelled:", total_dist, "m")
+    #print("Total time:", round(t*1e7,5), "ns")
+
+    return (sabsl, labsl, abs_coords, theta_iso, phi_iso, p1.wl, refract_coords, hit_coords, detected, 
+            reflects, pmtqe, xpos, ypos, zpos, t, timeout, total_dist)

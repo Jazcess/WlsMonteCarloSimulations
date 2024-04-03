@@ -197,6 +197,10 @@ def start_sim(pos, velocity, init_wl, satl, latl, boundaries, pmt_center, pmt_ra
             #print("Absorption Point:", abs_coords)
 
             if absorbed_again: #fully absorbed at this point
+                if hit == True:
+                    hit = False
+                    hit_coords = []
+                    detected = False
                 break
 
             #only do wavelength shifting and emmission with wls plate, not water
@@ -250,10 +254,10 @@ def start_sim(pos, velocity, init_wl, satl, latl, boundaries, pmt_center, pmt_ra
             # print("Total distance travelled:", total_dist, "m")
 
         # Check for simulation timeout
-        if t > 1e-8:
-            timeout = True
-            #print("Timeout!")
-            break
+        # if t > 1e-8:
+        #     timeout = True
+        #     #print("Timeout!")
+        #     break
 
 
     #print("Total distance travelled:", total_dist, "m")

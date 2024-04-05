@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 # ---------------DATA-FILES-----------------
 
 # Input data files
-file_emm = open('/Users/jss55/Documents/Python/MC_SIM/data/Kuraray_emmission_data.csv')
-file_QE = open('/Users/jss55/Documents/Python/MC_SIM/data/Hamamatsu_PMT_QE_data.csv')
+file_emm = open('data/Kuraray_emmission_data.csv')
+file_QE = open('/data/Hamamatsu_PMT_QE_data.csv')
 
 # WLS emission spectrum data
 csvreader = csv.reader(file_emm)

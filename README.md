@@ -31,6 +31,7 @@ It includes a Jupyter notebook for analyzing simulation output, a Photon class f
 - NumPy
 - Matplotlib
 - Seaborn (for visualization in the Jupyter notebook)
+- Ipynb (Jupyter notebook)
 
 ## File Descriptions
 

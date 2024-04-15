@@ -10,7 +10,7 @@ It includes a Jupyter notebook for analyzing simulation output, a Photon class f
 2. `Simulation_Analysis.ipynb`: Jupyter notebook for analyzing simulation output data.
 3. `Photon_Class.py`: Python script defining the Photon class used in the simulation.
 4. `Sim_data.py`: Python script containing simulation data, such as emission spectrum and quantum efficiency.
-5. `data_processing.py`: Python script for reading and processing simulation data files.
+5. `wlsPlateAnalysis.ipynb`: Jupyter notebook for reading and processing simulation data files.
 6. `README.md`: This file providing an overview of the repository.
 
 ## Usage
@@ -32,12 +32,3 @@ It includes a Jupyter notebook for analyzing simulation output, a Photon class f
 - Matplotlib
 - Seaborn (for visualization in the Jupyter notebook)
 - Ipynb (Jupyter notebook)
-
-## File Descriptions
-
-- `MonteCarlo.py`: Main simulation script.
-- `Simulation_Analysis.ipynb`: Jupyter notebook for analysis.
-- `Photon_Class.py`: Photon class definition.
-- `Sim_data.py`: Simulation data (emission spectrum, quantum efficiency).
-- `data_processing.py`: Script for reading and processing simulation data.
-

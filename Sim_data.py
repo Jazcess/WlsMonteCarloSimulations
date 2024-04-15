@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # Input data files
 file_emm = open('data/Kuraray_emmission_data.csv')
-file_QE = open('/data/Hamamatsu_PMT_QE_data.csv')
+file_QE = open('data/Hamamatsu_PMT_QE_data.csv')
 
 # WLS emission spectrum data
 csvreader = csv.reader(file_emm)

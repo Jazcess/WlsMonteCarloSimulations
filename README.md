@@ -23,7 +23,7 @@ It includes a Jupyter notebook for analyzing simulation output, a Photon class f
 
 4. **Simulation Data**: The `Sim_data.py` script contains data used in the simulation, such as emission spectrum and quantum efficiency. Update this script if you have new data.
 
-5. **Data Processing**: The `data_processing.py` script reads and processes simulation data files. Adjust file paths or formats as necessary.
+5. **Data Processing**: The `wlsPlateAnalysis.ipynb` script reads and processes simulation data files. Adjust file paths or formats as necessary.
 
 ## Requirements
 

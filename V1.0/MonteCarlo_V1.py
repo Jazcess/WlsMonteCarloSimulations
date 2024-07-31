@@ -18,12 +18,11 @@ import Sim_funcs_V1 as func
 import Sim_data as data
 import Photon_Class as P
 
-random.seed(0)
 
 
 #---------------------VARIABLES------------------
 
-nruns=1500
+nruns=1000
 dt = 1e-13 # time difference between each step in seconds
 R = 0.0762/2 #pmt radius
 n_wls = 1.58 # refractive index of PVT WLS plate
@@ -203,4 +202,4 @@ def sim(out_file):
                         break
 
             row.extend([x_pos, y_pos, z_pos, t, timedOut])            
-            writer.writerow(row) #updaye output file
+            writer.writerow(row) #update output file
